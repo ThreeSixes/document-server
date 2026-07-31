@@ -11,4 +11,4 @@ ansible/inventory/**.yml
 # Don't check in local dev assets.
 notes/**
 **/*.env
-local-test/document-server/nginx-root/content/**
+local-test/nginx-root/content/**
