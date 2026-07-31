@@ -10,5 +10,5 @@ ansible/inventory/**.yml
 
 # Don't check in local dev assets.
 notes/**
-local-test/document-server/nginx-root/**
+local-test/document-server/nginx-root/content/**
 local-test/document-server/ap-mode-handler.env
