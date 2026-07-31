@@ -1,0 +1,180 @@
+---
+- name: Bootstrap Raspberry Pi Server
+  hosts: all
+  become: true
+  remote_user: "{{ hostvars[inventory_hostname].user }}"
+  become_user: root
+  vars:
+    ansible_host_key_checking: false
+
+  tasks:
+    - name: Enforce limit
+      ansible.builtin.fail:
+        msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
+      when: ansible_limit is not defined
+
+    - name: Cloud-init - preserve_hostname cloud.cfg
+      ansible.builtin.lineinfile:
+        path: "/etc/cloud/cloud.cfg"
+        regexp: "^preserve_hostname: false$"
+        line: 'preserve_hostname: true'
+
+    - name: Cloud-init - settings block in cloud.cfg
+      ansible.builtin.blockinfile:
+        path: /etc/cloud/cloud.cfg
+        block: |
+          manage_etc_hosts: true
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+
+    - name: Cloud-init - user-data settings
+      ansible.builtin.blockinfile:
+        path: /boot/firmware/user-data
+        block: |
+          preserve_hostname: true
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+
+    - name: Update apt repo
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: false
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages on server
+      ansible.builtin.apt:
+        upgrade: dist
+        force_apt_get: true
+
+    - name: Check for required reboot
+      register: reboot_required_file
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: false
+      changed_when: reboot_required_file.stat.exists
+      notify: Reboot
+
+    - name: Install aptitude
+      ansible.builtin.apt:
+        name: aptitude
+        state: present
+        update_cache: true
+        force_apt_get: true
+        cache_valid_time: 3600
+
+    - name: Install baseline applications
+      ansible.builtin.apt:
+        name:
+          - apt-listchanges
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - chrony
+          - dnsutils
+          - gnupg
+          - htop
+          - unattended-upgrades
+          - vim
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Update CA certificates...
+      ansible.builtin.command:
+        cmd: update-ca-certificates
+        creates: /etc/ssl/certs/
+
+    - name: Configure static IP address (NetworkManager)
+      community.general.nmcli:
+        conn_name: "Wired connection 1"
+        ifname: eth0
+        type: ethernet
+        method4: manual
+        ip4: "{{ hostvars[inventory_hostname].new_ip }}/{{ hostvars[inventory_hostname].subnet_len }}"
+        ip6: "{{ hostvars[inventory_hostname].new_ip6 }}/{{ hostvars[inventory_hostname].subnet_len6 }}"
+        gw4: "{{ hostvars[inventory_hostname].gateway }}"
+        gw6: "{{ hostvars[inventory_hostname].gateway6 }}"
+        dns4: "{{ hostvars[inventory_hostname].dns_servers | reject('eq', '127.0.0.1') | reject('eq', hostvars[inventory_hostname].new_ip) | list }}"
+        dns4_search:
+          - "{{ hostvars[inventory_hostname].dns_domain_suffix }}"
+        state: present
+      notify:
+        - Restart NetworkManager
+
+    - name: Update node IP
+      ansible.builtin.set_fact:
+        ansible_host: "{{ hostvars[inventory_hostname].new_ip }}"
+
+    - name: Disable wireless interfaces via dtoverylay
+      ansible.builtin.lineinfile:
+        path: /boot/firmware/config.txt
+        line: 'dtoverlay=disable-wifi,disable-bt'
+        create: true
+        mode: "0600"
+      notify: Reboot
+
+    - name: Set Vim as the default editor for all users
+      ansible.builtin.command:
+        cmd: update-alternatives --set editor /usr/bin/vim.basic
+        creates: /etc/alternatives/editor
+      become: true
+
+    - name: Set the hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+      notify: Reboot
+
+    - name: Update sshd config - Listen on IPv4 all
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#ListenAddress 0\.0\.0\.0$'
+        line: 'ListenAddress 0.0.0.0'
+      notify: Restart sshd
+
+    - name: Update sshd config - Listen on IPv6 all
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#ListenAddress \:\:$'
+        line: 'ListenAddress ::'
+      notify: Restart sshd
+
+    - name: Update sshd config - disable empty passwords
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#PermitEmptyPasswords yes$'
+        line: 'PermitEmptyPasswords no'
+      notify: Restart sshd
+
+    - name: Update sshd config - disable root login
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#PermitRootLogin prohibit-password$'
+        line: 'PermitRootLogin no'
+      notify: Restart sshd
+
+    - name: Update SSH keys
+      ansible.posix.authorized_key:
+        user: "{{ hostvars[inventory_hostname].user }}"
+        state: present
+        key: "{{ lookup('file', 'files/ssh-pubkeys.pub') }}"
+        exclusive: true
+        manage_dir: true
+
+  handlers:
+    - name: Reboot
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible."
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      throttle: 1
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
+        state: restarted
+
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted

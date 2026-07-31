@@ -1,0 +1,46 @@
+---
+- name: Install Docker on an RPi
+  hosts: all
+  become: true
+  remote_user: "{{ hostvars[inventory_hostname].user }}"
+  become_user: root
+
+  tasks:
+    - name: Enforce limit
+      ansible.builtin.fail:
+        msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
+      when: ansible_limit is not defined
+
+    - name: Make Docker install directory
+      ansible.builtin.file:
+        path: "/home/{{ hostvars[inventory_hostname].user }}/docker-install"
+        state: directory
+        mode: "0700"
+
+    - name: Download Docker install script
+      ansible.builtin.get_url:
+        url: "https://get.docker.com"
+        dest: "/home/{{ hostvars[inventory_hostname].user }}/docker-install/get-docker.sh"
+        mode: "0700"
+      notify: Run the Docker install script
+
+    - name: Run handlers
+      meta: flush_handlers
+
+    - name: Add non-root user to Docker group
+      ansible.builtin.user:
+        name: "{{ hostvars[inventory_hostname].user }}"
+        groups: docker 
+        append: yes
+
+    - name: Enable and start docker service
+      ansible.builtin.systemd_service:
+        name: docker
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Run the Docker install script
+      ansible.builtin.shell:
+        cmd: "/home/{{ hostvars[inventory_hostname].user }}/docker-install/get-docker.sh"
+        executable: /usr/bin/sh

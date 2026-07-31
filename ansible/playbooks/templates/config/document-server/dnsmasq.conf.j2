@@ -1,0 +1,19 @@
+# /etc/dnsmasq.conf
+# THIS CONFIGURATION FILE WAS GENERATED USING ANSIBLE
+
+# Interface binding configuration
+interface={{ wifi_interface }}
+bind-interfaces
+
+# DNS resolver behavior
+domain-needed
+bogus-priv
+
+# DNS configuration
+dhcp-range={{ wifi_dhcp_range_start }},{{ wifi_dhcp_range_end }},{{ wifi_ip_addr | ipaddr('netmask') }},{{ wifi_dhcp_lease_time }}
+dhcp-option=option:dns-server,{{ wifi_ip_addr | ipaddr('address') }}
+
+# DNS records
+{% for hostname in wifi_dns_self_entries | sort -%}
+address=/{{ hostname }}/{{ wifi_ip_addr | ipaddr('address') }}
+{% endfor %}

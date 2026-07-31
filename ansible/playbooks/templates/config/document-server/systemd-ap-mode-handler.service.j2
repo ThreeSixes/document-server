@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AP mode handler after delay
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/{{ hostvars[inventory_hostname].user }}/document-server/ap-mode-handler.sh auto-delay
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

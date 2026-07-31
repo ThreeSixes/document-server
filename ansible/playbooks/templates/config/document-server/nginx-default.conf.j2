@@ -1,0 +1,33 @@
+server {
+  listen       {{ nginxPort }};
+  listen       [::]:{{ nginxPort }};
+  server_name  localhost;
+
+  root  /usr/share/nginx/html;
+  index index.html;
+
+  location / {
+    root  /usr/share/nginx/html;
+    index index.html;
+  }
+
+  location /{{ contentPath }}/ {
+    root                 /usr/share/nginx/html;
+    index                __no_html_indexes__;
+    autoindex            on;
+    autoindex_exact_size off; 
+  }
+
+  location  /{{ kiwixPath }}/ {
+    proxy_pass      http://{{ kiwixService }}:{{ kiwixPort }};
+    proxy_redirect  off;
+  }
+
+  error_log   stderr warn;
+  access_log  /dev/stdout main;
+
+  error_page  500 502 503 504 /50x.html;
+  location = /50x.html {
+    root /usr/share/nginx/html;
+  }
+}

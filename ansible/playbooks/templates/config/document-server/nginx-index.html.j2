@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>{{ landingPageTitle }}</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: #121212;
+      color: #ffffff;
+    }
+  }
+
+  .link-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .link-button:hover {
+    background-color: #0056b3;
+  }
+</style>
+</head>
+<body>
+<h1>{{ landingPageTitle }}</h1>
+<br />
+This is a portable document/wiki server. To begin click on the Wikis link or click on the content link to explore and download content on this server.
+<br />
+<br />
+<a href="{{ kiwixPath }}/" class="link-button">Wikis</a>&nbsp;&nbsp;<a href="{{ contentPath }}/" class="link-button">Content</a>
+</body>
+</html>

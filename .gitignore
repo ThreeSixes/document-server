@@ -1,0 +1,14 @@
+# Don't check in OS artifacts.
+**/.DS_Store
+
+# Don't check in secrets.
+**.secret.yaml
+
+# Don't check in non-example inventory.
+ansible/inventory/**.yaml
+ansible/inventory/**.yml
+
+# Don't check in local dev assets.
+notes/**
+local-test/document-server/nginx-root/**
+local-test/document-server/ap-mode-handler.env

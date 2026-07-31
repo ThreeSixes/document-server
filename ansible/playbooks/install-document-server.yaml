@@ -1,0 +1,131 @@
+---
+- name: Install document server
+  hosts: all
+  become: true
+  remote_user: "{{ hostvars[inventory_hostname].user }}"
+  become_user: root
+  vars_files:
+    - vars/document-server.yaml
+
+  tasks:
+    - name: Enforce limit
+      ansible.builtin.fail:
+        msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
+      when: ansible_limit is not defined
+
+    - name: Install server applications
+      ansible.builtin.apt:
+        name:
+          - dnsmasq
+          - hostapd
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Stop and disable dnsmasq
+      ansible.builtin.systemd_service:
+        name: dnsmasq
+        state: stopped
+        enabled: false
+
+    - name: Stop and disable hostapd
+      ansible.builtin.systemd_service:
+        name: hostapd 
+        state: stopped
+        enabled: false
+    
+    - name: Configure dnsmasq
+      ansible.builtin.template:
+        src: config/document-server/dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+        mode: '0644'
+
+    - name: Configure hostapd
+      ansible.builtin.template:
+        src: config/document-server/hostapd.conf.j2
+        dest: /etc/hostapd/hostapd.conf
+        mode: '0644'
+
+    - name: Make document server install directory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/document-server
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Make config subdirectory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/document-server/config
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Make NGINX web root directory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Make content subdirectory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/{{ contentPath }}
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Make active wikis content subdirectory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/{{ contentPath }}/{{ activeWikiPath }}
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Install NGINX index.html
+      ansible.builtin.template:
+        src: config/document-server/nginx-index.html.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/index.html
+        mode: '0644'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+      notify: Docker compose up
+
+    - name: Install NGINX default.conf
+      ansible.builtin.template:
+        src: config/document-server/nginx-default.conf.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/config/nginx-default.conf
+        mode: '0644'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+      notify: Docker compose up
+
+    - name: Install docker-compose.yaml
+      ansible.builtin.template:
+        src: config/document-server/docker-compose.yaml.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/docker-compose.yaml
+        mode: '0644'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+      notify: Docker compose up
+
+    - name: Install AP mode handler
+      ansible.builtin.template:
+        src: config/document-server/ap-mode-handler.sh.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/ap-mode-handler.sh
+        mode: '0755'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Install AP mode systemd unit
+      ansible.builtin.template:
+        src: config/document-server/systemd-ap-mode-handler.service.j2
+        dest: /etc/systemd/system/ap-mode-handler.service
+        mode: '0644'
+
+    - name: Enable and start AP mode systemd unit
+      ansible.builtin.systemd_service:
+        name: systemd-ap-mode-handler
+        state: started
+        enabled: true
+        daemon_reload: true
+
+  handlers:
+    - name: Docker compose up
+      ansible.builtin.command:
+        cmd: "cd /home/{{ hostvars[inventory_hostname].user }}/document-server/ && docker compose up -d -w"

@@ -1,0 +1,18 @@
+doc_servers:
+  hosts:
+    doc-server:
+      user: pi
+      dns_domain_suffix: local
+      ansible_host: 192.168.0.200
+      wifi_ip_addr: 192.168.120.1/24
+      wifi_dhcp_range_start: 192.168.120.2
+      wifi_dhcp_range_end: 192.168.120.254
+      wifi_dhcp_lease_time: 8h
+      wifi_interface: wlan0
+      wifi_ssid: DOC-SERVER
+      wifi_psk: DOXSERVER1
+      wifi_channel: 2 # Don't use automatic channel scanning (0). It doesn't seem to start.
+      # Add DNS records to the document server that will redirect to it when it's in AP mode.
+      wifi_dns_self_entries: [
+        "hijackme.net"
+      ]

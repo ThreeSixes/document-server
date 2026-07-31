@@ -1,0 +1,24 @@
+# AP mode handler configuration
+apModeHandlerDelaySec: 30
+
+# Web page configuration
+landingPageTitle: Document server
+contentPath: content
+kiwixPath: wiki
+activeWikiPath: wiki-active
+
+# External listener configuration
+externalWebPort: 80
+listenHost: 0.0.0.0
+
+# Kiwix wiki config - release tags here: https://github.com/kiwix/kiwix-tools/tags
+kiwixTag: 3.8.2
+kiwixImage: ghcr.io/kiwix/kiwix-serve
+kiwixPort: 8080
+kiwixService: kiwix-serve
+
+# NGINX web server config - release tags here: https://hub.docker.com/_/nginx
+nginxTag: 1.31.3-alpine
+nginxImage: nginx
+nginxPort: 80
+nginxService: nginx

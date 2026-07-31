@@ -1,0 +1,26 @@
+services:
+  kiwix-serve:
+    image: "ghcr.io/kiwix/kiwix-serve:3.8.2"
+    container_name: kiwix-serve
+    restart: unless-stopped
+    environment:
+      - THREADS=2
+    command: "-r /wiki/ *.zim"
+    volumes:
+      - ./nginx-root/content/wikis-active:/data
+    expose:
+      - "8080"
+  nginx:
+    image: "nginx:1.31.3-alpine"
+    container_name: nginx
+    restart: unless-stopped
+    volumes:
+      - ./config/nginx-default.conf:/etc/nginx/conf.d/default.conf
+      - type: bind
+        source: ./nginx-root/
+        target: /usr/share/nginx/html/
+        read_only: true
+    ports:
+      - "0.0.0.0:80:80"
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0

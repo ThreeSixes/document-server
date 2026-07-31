@@ -1,0 +1,6 @@
+---
+- name: Bootstrap portable Pi server
+  import_playbook: bootstrap-portable-pi-server.yaml
+
+- name: Install Docker on RPi
+  import_playbook: pi-docker-install.yaml
