@@ -1,0 +1,13 @@
+[Unit]
+Description=Run AP mode handler after delay
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+Type=forking
+WorkingDirectory=/<path to this repo>/local-test/
+ExecStart=/<path to this repo>/local-test/ap-mode-handler.sh auto-delay
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
