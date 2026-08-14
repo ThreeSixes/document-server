@@ -112,6 +112,13 @@
         mode: '0755'
         owner: "{{ hostvars[inventory_hostname].user }}"
 
+    - name: Install AP mode handler env vars
+      ansible.builtin.template:
+        src: config/document-server/ap-mode-handler.env.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/ap-mode-handler.env
+        mode: '0755'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
     - name: Install AP mode systemd unit
       ansible.builtin.template:
         src: config/document-server/systemd-ap-mode-handler.service.j2
