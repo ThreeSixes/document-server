@@ -7,11 +7,11 @@ services:
       - THREADS=2
     command: "-r /{{ kiwix_path }}/ *.zim"
     volumes:
-      - ./nginx-root/{{ content_path }}/wikis-active:/data:ro
+      - ./nginx-root/{{ content_path }}/{{ active_wiki_path }}:/data:ro
     develop:
       watch:
         - action: sync+restart
-          path: ./nginx-root/{{ content_path }}/wikis-active
+          path: ./nginx-root/{{ content_path }}/{{ active_wiki_path }}
           target: /data
     expose:
       - "{{ kiwix_port }}"

@@ -5,7 +5,7 @@ ap_mode_handler_delay_sec: 30
 landing_page_title: document server
 content_path: content
 kiwix_path: wiki
-active_wiki_path: wiki-active
+active_wiki_path: wikis-active
 
 # External listener configuration
 external_web_port: 80
