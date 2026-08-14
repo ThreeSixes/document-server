@@ -1,15 +1,15 @@
 #!/bin/bash
 
-WRLS_IFACE="{{ wifi_interface }}"
-WRLS_IFACE_IP="{{ wifi_ip_addr }}"
-WRLS_BCAST_IP="{{ wifi_ip_addr | ipaddr('broadcast') }}"
-AUTO_DELAY_SEC={{ ap_mode_andler_delay_sec }}
-
 set -e
+
+source ap-mode-handler.env
 
 # Turn on AP mode.
 ap_mode_on() {
     echo ">>> STARTING WIRELESS AP MODE"
+
+    echo ">>> Unmanage $WRLS_IFACE with nmcli..."
+    nmcli device set $WRLS_IFACE managed no
 
     # Cycle wifi Interface for better process reliability.
     echo ">>> Set $WRLS_IFACE down..."
@@ -104,6 +104,7 @@ if [[ "$1" != "" ]]; then
     else
         AP_MODE="nop"
         PRINT_HELP="true"
+        # TODO: change me to permissions error?
         EXIT_CODE=1 
         echo "ERROR: this script must be run as root."
         echo ""

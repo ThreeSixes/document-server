@@ -2,12 +2,14 @@
 
 set -e
 
-# Set env from system-specific env vars.
 source ap-mode-handler.env
 
 # Turn on AP mode.
 ap_mode_on() {
     echo ">>> STARTING WIRELESS AP MODE"
+
+    echo ">>> Unmanage $WRLS_IFACE with nmcli..."
+    nmcli device set $WRLS_IFACE managed no
 
     # Cycle wifi Interface for better process reliability.
     echo ">>> Set $WRLS_IFACE down..."
