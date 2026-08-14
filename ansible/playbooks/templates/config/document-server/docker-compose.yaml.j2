@@ -1,22 +1,22 @@
 services:
-  {{ kiwixService }}:
-    image: "{{ kiwixImage }}:{{ kiwixTag }}"
-    container_name: {{ kiwixService }}
+  {{ kiwix_service }}:
+    image: "{{ kiwix_image }}:{{ kiwix_tag }}"
+    container_name: {{ kiwix_service }}
     restart: unless-stopped
     environment:
       - THREADS=2
-    command: "-r /{{ kiwixPath }}/ *.zim"
+    command: "-r /{{ kiwix_path }}/ *.zim"
     volumes:
-      - ./nginx-root/{{ contentPath }}/wikis-active:/data:ro
+      - ./nginx-root/{{ content_path }}/wikis-active:/data:ro
     develop:
       watch:
         - action: sync+restart
-          path: ./nginx-root/{{ contentPath }}/wikis-active
+          path: ./nginx-root/{{ content_path }}/wikis-active
           target: /data
     expose:
-      - "{{ kiwixPort }}"
-  {{ nginxService }}:
-    image: "{{ nginxImage }}:{{ nginxTag }}"
+      - "{{ kiwix_port }}"
+  {{ nginx_service }}:
+    image: "{{ nginx_image }}:{{ nginx_tag }}"
     container_name: nginx
     restart: unless-stopped
     volumes:
@@ -31,6 +31,6 @@ services:
           path: ./config/nginx-default.conf
           target: /etc/nginx/conf.d/default.conf
     ports:
-      - "{{ listenHost }}:{{ externalWebPort }}:{{ nginxPort }}"
+      - "{{ listen_host }}:{{ external_web_port }}:{{ nginx_port }}"
     sysctls:
       - net.ipv4.ip_unprivileged_port_start=0

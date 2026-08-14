@@ -2,7 +2,10 @@
 
 set -e
 
-source ap-mode-handler.env
+WRLS_IFACE="{{ wifi_interface }}"
+WRLS_IFACE_IP="{{ wifi_ip_addr }}"
+WRLS_BCAST_IP="{{ wifi_ip_addr | ipaddr('broadcast') }}"
+AUTO_DELAY_SEC={{ ap_mode_handler_delay_sec }}
 
 # Turn on AP mode.
 ap_mode_on() {
