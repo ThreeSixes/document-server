@@ -69,15 +69,19 @@
         validate: "/usr/sbin/sshd -t -f %s"
       notify: Restart sshd
 
-    - name: Update SSH keys
+    - name: Check if file exists in playbook directory
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/files/ssh-pubkeys.pub"
+      register: pubkey_file
+
+    - name: Update SSH public keys
       ansible.posix.authorized_key:
         user: "{{ hostvars[inventory_hostname].user }}"
         state: present
         key: "{{ lookup('file', 'files/ssh-pubkeys.pub') }}"
         exclusive: true
         manage_dir: true
-
-
+      when: pubkey_file.stat.exists
 
   handlers:
     - name: Restart sshd
