@@ -67,9 +67,7 @@
           - apt-transport-https
           - ca-certificates
           - curl
-          - chrony
           - dnsutils
-          - gnupg
           - htop
           - unattended-upgrades
           - vim
@@ -81,35 +79,6 @@
       ansible.builtin.command:
         cmd: update-ca-certificates
         creates: /etc/ssl/certs/
-
-    - name: Configure static IP address (NetworkManager)
-      community.general.nmcli:
-        conn_name: "Wired connection 1"
-        ifname: eth0
-        type: ethernet
-        method4: manual
-        ip4: "{{ hostvars[inventory_hostname].new_ip }}/{{ hostvars[inventory_hostname].subnet_len }}"
-        ip6: "{{ hostvars[inventory_hostname].new_ip6 }}/{{ hostvars[inventory_hostname].subnet_len6 }}"
-        gw4: "{{ hostvars[inventory_hostname].gateway }}"
-        gw6: "{{ hostvars[inventory_hostname].gateway6 }}"
-        dns4: "{{ hostvars[inventory_hostname].dns_servers | reject('eq', '127.0.0.1') | reject('eq', hostvars[inventory_hostname].new_ip) | list }}"
-        dns4_search:
-          - "{{ hostvars[inventory_hostname].dns_domain_suffix }}"
-        state: present
-      notify:
-        - Restart NetworkManager
-
-    - name: Update node IP
-      ansible.builtin.set_fact:
-        ansible_host: "{{ hostvars[inventory_hostname].new_ip }}"
-
-    - name: Disable wireless interfaces via dtoverylay
-      ansible.builtin.lineinfile:
-        path: /boot/firmware/config.txt
-        line: 'dtoverlay=disable-wifi,disable-bt'
-        create: true
-        mode: "0600"
-      notify: Reboot
 
     - name: Set Vim as the default editor for all users
       ansible.builtin.command:
@@ -136,27 +105,19 @@
         line: 'ListenAddress ::'
       notify: Restart sshd
 
-    - name: Update sshd config - disable empty passwords
-      ansible.builtin.lineinfile:
-        path: '/etc/ssh/sshd_config'
-        regexp: '^\#PermitEmptyPasswords yes$'
-        line: 'PermitEmptyPasswords no'
-      notify: Restart sshd
+    - name: Check if file exists in playbook directory
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/files/ssh-pubkeys.pub"
+      register: pubkey_file
 
-    - name: Update sshd config - disable root login
-      ansible.builtin.lineinfile:
-        path: '/etc/ssh/sshd_config'
-        regexp: '^\#PermitRootLogin prohibit-password$'
-        line: 'PermitRootLogin no'
-      notify: Restart sshd
-
-    - name: Update SSH keys
+    - name: Update SSH public keys
       ansible.posix.authorized_key:
         user: "{{ hostvars[inventory_hostname].user }}"
         state: present
         key: "{{ lookup('file', 'files/ssh-pubkeys.pub') }}"
         exclusive: true
         manage_dir: true
+      when: pubkey_file.stat.exists
 
   handlers:
     - name: Reboot
@@ -168,11 +129,6 @@
         post_reboot_delay: 30
         test_command: uptime
       throttle: 1
-
-    - name: Restart NetworkManager
-      ansible.builtin.systemd:
-        name: NetworkManager
-        state: restarted
 
     - name: Restart sshd
       ansible.builtin.systemd:
