@@ -1,0 +1,76 @@
+---
+- name: Reconfigure SSHD
+  hosts: all
+  become: true
+  remote_user: "{{ hostvars[inventory_hostname].user }}"
+  become_user: root
+  vars:
+    ansible_host_key_checking: false
+
+  tasks:
+    - name: Enforce limit
+      ansible.builtin.fail:
+        msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
+      when: ansible_limit is not defined
+
+    - name: Update sshd config - Listen on IPv4 all
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#ListenAddress 0\.0\.0\.0'
+        line: 'ListenAddress 0.0.0.0'
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Update sshd config - Listen on IPv6 all
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#ListenAddress \:\:'
+        line: 'ListenAddress ::'
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Update sshd config - disable empty passwords
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#PermitEmptyPasswords'
+        line: 'PermitEmptyPasswords no'
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Disable keyboard-interactive authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?KbdInteractiveAuthentication"
+        line: "KbdInteractiveAuthentication no"
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Update sshd config - disable root login
+      ansible.builtin.lineinfile:
+        path: '/etc/ssh/sshd_config'
+        regexp: '^\#PermitRootLogin'
+        line: 'PermitRootLogin no'
+        validate: "/usr/sbin/sshd -t -f %s"
+      notify: Restart sshd
+
+    - name: Update SSH keys
+      ansible.posix.authorized_key:
+        user: "{{ hostvars[inventory_hostname].user }}"
+        state: present
+        key: "{{ lookup('file', 'files/ssh-pubkeys.pub') }}"
+        exclusive: true
+        manage_dir: true
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
