@@ -8,6 +8,9 @@
 ansible/inventory/**.yaml
 ansible/inventory/**.yml
 
+# Don't check in local secrets
+ansible/playbooks/files/ssh-pubkeys.pub
+
 # Don't check in local dev assets.
 notes/**
 **/*.env
