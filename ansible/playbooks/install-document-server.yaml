@@ -41,6 +41,12 @@
         mode: "0755"
         owner: "{{ hostvars[inventory_hostname].user }}"
 
+    - name: Create content symlink
+      ansible.builtin.file:
+        src: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/{{ content_path }}
+        dest: /home/{{ hostvars[inventory_hostname].user }}/content
+        state: link
+
     - name: Make active wikis content subdirectory
       ansible.builtin.file:
         path: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/{{ content_path }}/{{ active_wiki_path }}

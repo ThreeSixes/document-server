@@ -1,8 +1,11 @@
 # AP mode handler configuration
 ap_mode_handler_delay_sec: 30
 
+# Local content path - this gets synced to the document server.
+local_content_sync_path: "{{ playbook_dir }}/files/content"
+
 # Web page configuration
-landing_page_title: Document Server / Servidor de documentos
+landing_page_title: Document Server
 content_path: content
 kiwix_path: wiki
 active_wiki_path: wikis-active
