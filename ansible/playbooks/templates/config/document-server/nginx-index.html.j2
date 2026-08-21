@@ -25,14 +25,23 @@
   .link-button:hover {
     background-color: #0056b3;
   }
+
 </style>
 </head>
 <body>
 <h1>{{ landing_page_title }}</h1>
+<div lang="en" id="instructions-en">
+This is a portable document and wiki server.
 <br />
-This is a portable document/wiki server. To begin click on the Wikis link or click on the content link to explore and download content on this server.
+To begin click on the "Wikis" link to view any installed wikis or click the "Content" link to browse content stored on this server. Wiki ZIM files can also be downloaded from the "Content" link below.
+</div>
 <br />
+<div lang="es" id="instructions-es">
+Este es un servidor port&aacute;til de documentos y wikis.
 <br />
-<a href="{{ kiwix_path }}/" class="link-button">Wikis</a>&nbsp;&nbsp;<a href="{{ content_path }}/" class="link-button">Content</a>
+Para comenzar, haga clic en el enlace &laquo;Wikis&raquo; para ver las wikis instaladas o en el enlace &laquo;Content&raquo; para explorar el contenido almacenado en este servidor. Tambi&eacute;n es posible descargar archivos ZIM de wikis desde el enlace &laquo;Content&raquo; que aparece a continuaci&oacute;n.
+</div>
+<br />
+<a href="{{ kiwix_path }}/" target="_blank" rel="noopener noreferrer" class="link-button">Wikis</a>&nbsp;&nbsp;<a href="{{ content_path }}/" target="_blank" rel="noopener noreferrer" class="link-button">Content</a>
 </body>
 </html>
