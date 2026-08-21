@@ -7,16 +7,6 @@
     - vars/document-server.yaml
 
   tasks:
-    - name: Check for local content directory
-      ansible.builtin.stat:
-        path: "{{ local_content_sync_path }}"
-      register: content_dir
-
-    - name: Check for local active wiki directory
-      ansible.builtin.stat:
-        path: "{{ local_content_sync_path }}/{{ active_wiki_path }}"
-      register: wiki_dir
-
     - name: Sync local directory content directory to remote
       ansible.posix.synchronize:
         src: "{{ local_content_sync_path }}/"
@@ -26,23 +16,8 @@
         times: true
         delete: true
         recursive: true
-        rsync_opts:
-          - "--exclude={{ active_wiki_path }}/*"
       notify: Change content permissions
  
-    - name: Sync local active wiki directory to remote
-      ansible.posix.synchronize:
-        src: "{{ local_content_sync_path }}/{{ active_wiki_path }}"
-        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/{{ content_path }}/{{ active_wiki_path }}
-        checksum: true
-        copy_links: true
-        times: true
-        delete: true
-        recursive: true
-      notify:
-        - Change content permissions
-        - Docker compose restart
-   
   handlers:
     - name: Change content permissions
       ansible.builtin.file:
@@ -51,6 +26,7 @@
         owner: "{{ hostvars[inventory_hostname].user }}"
         mode: u=rwX,g=rwX,o=rX
         recurse: true
+      notify: Docker compose restart
 
     - name: Docker compose restart
       ansible.builtin.command:
