@@ -3,13 +3,14 @@
 
 # Don't check in secrets.
 **.secret.yaml
+ansible/playbooks/files/ssh-pubkeys.pub
+
+# Don't check in content
+ansible/playbooks/files/content/*
 
 # Don't check in non-example inventory.
 ansible/inventory/**.yaml
 ansible/inventory/**.yml
-
-# Don't check in local secrets
-ansible/playbooks/files/ssh-pubkeys.pub
 
 # Don't check in local dev assets.
 notes/**
