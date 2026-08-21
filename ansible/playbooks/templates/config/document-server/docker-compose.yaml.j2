@@ -8,11 +8,6 @@ services:
     command: "-r /{{ kiwix_path }}/ *.zim"
     volumes:
       - ./nginx-root/{{ content_path }}/{{ active_wiki_path }}:/data:ro
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./nginx-root/{{ content_path }}/{{ active_wiki_path }}
-          target: /data
     expose:
       - "{{ kiwix_port }}"
   {{ nginx_service }}:
@@ -25,11 +20,6 @@ services:
         source: ./nginx-root
         target: /usr/share/nginx/html
         read_only: true
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./config/nginx-default.conf
-          target: /etc/nginx/conf.d/default.conf
     ports:
       - "{{ listen_host }}:{{ external_web_port }}:{{ nginx_port }}"
     sysctls:

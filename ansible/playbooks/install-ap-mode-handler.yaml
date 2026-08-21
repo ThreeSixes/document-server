@@ -1,0 +1,77 @@
+---
+- name: Install wireless AP components
+  hosts: all
+  become: true
+  remote_user: "{{ hostvars[inventory_hostname].user }}"
+  become_user: root
+  vars_files:
+    - vars/document-server.yaml
+
+  tasks:
+    - name: Enforce limit
+      ansible.builtin.fail:
+        msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
+      when: ansible_limit is not defined
+
+    - name: Make AP mode handler install directory
+      ansible.builtin.file:
+        path: /home/{{ hostvars[inventory_hostname].user }}/ap-mode-handler
+        state: directory
+        mode: "0755"
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Install server applications
+      ansible.builtin.apt:
+        name:
+          - dnsmasq
+          - hostapd
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Stop and disable dnsmasq
+      ansible.builtin.systemd_service:
+        name: dnsmasq
+        state: stopped
+        enabled: false
+
+    - name: Stop and disable hostapd
+      ansible.builtin.systemd_service:
+        name: hostapd 
+        state: stopped
+        enabled: false
+        masked: false
+    
+    - name: Configure dnsmasq
+      ansible.builtin.template:
+        src: config/ap-mode-handler/dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+        mode: '0644'
+
+    - name: Configure hostapd
+      ansible.builtin.template:
+        src: config/ap-mode-handler/hostapd.conf.j2
+        dest: /etc/hostapd/hostapd.conf
+        mode: '0644'
+
+    - name: Install AP mode handler
+      ansible.builtin.template:
+        src: config/ap-mode-handler/ap-mode-handler.sh.j2
+        dest: /home/{{ hostvars[inventory_hostname].user }}/ap-mode-handler/ap-mode-handler.sh
+        mode: '0755'
+        owner: "{{ hostvars[inventory_hostname].user }}"
+
+    - name: Install AP mode systemd unit
+      ansible.builtin.template:
+        src: config/ap-mode-handler/systemd-ap-mode-handler.service.j2
+        dest: /etc/systemd/system/ap-mode-handler.service
+        mode: '0644'
+      notify: Enable and start AP mode systemd unit
+
+  handlers:
+    - name: Enable and start AP mode systemd unit
+      ansible.builtin.systemd_service:
+        name: ap-mode-handler
+        state: started
+        enabled: true
+        daemon_reload: true

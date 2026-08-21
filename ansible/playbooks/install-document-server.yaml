@@ -13,40 +13,6 @@
         msg: "You must use -l or --limit. To run on all hosts, use -l 'all'."
       when: ansible_limit is not defined
 
-    - name: Install server applications
-      ansible.builtin.apt:
-        name:
-          - dnsmasq
-          - hostapd
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
-    - name: Stop and disable dnsmasq
-      ansible.builtin.systemd_service:
-        name: dnsmasq
-        state: stopped
-        enabled: false
-
-    - name: Stop and disable hostapd
-      ansible.builtin.systemd_service:
-        name: hostapd 
-        state: stopped
-        enabled: false
-        masked: false
-    
-    - name: Configure dnsmasq
-      ansible.builtin.template:
-        src: config/document-server/dnsmasq.conf.j2
-        dest: /etc/dnsmasq.conf
-        mode: '0644'
-
-    - name: Configure hostapd
-      ansible.builtin.template:
-        src: config/document-server/hostapd.conf.j2
-        dest: /etc/hostapd/hostapd.conf
-        mode: '0644'
-
     - name: Make document server install directory
       ansible.builtin.file:
         path: /home/{{ hostvars[inventory_hostname].user }}/document-server
@@ -88,7 +54,6 @@
         dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/nginx-root/index.html
         mode: '0644'
         owner: "{{ hostvars[inventory_hostname].user }}"
-      notify: Docker compose up
 
     - name: Install NGINX default.conf
       ansible.builtin.template:
@@ -96,7 +61,7 @@
         dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/config/nginx-default.conf
         mode: '0644'
         owner: "{{ hostvars[inventory_hostname].user }}"
-      notify: Docker compose up
+      notify: Docker compose restart
 
     - name: Install docker-compose.yaml
       ansible.builtin.template:
@@ -104,30 +69,9 @@
         dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/docker-compose.yaml
         mode: '0644'
         owner: "{{ hostvars[inventory_hostname].user }}"
-      notify: Docker compose up
-
-    - name: Install AP mode handler
-      ansible.builtin.template:
-        src: config/document-server/ap-mode-handler.sh.j2
-        dest: /home/{{ hostvars[inventory_hostname].user }}/document-server/ap-mode-handler.sh
-        mode: '0755'
-        owner: "{{ hostvars[inventory_hostname].user }}"
-
-    - name: Install AP mode systemd unit
-      ansible.builtin.template:
-        src: config/document-server/systemd-ap-mode-handler.service.j2
-        dest: /etc/systemd/system/ap-mode-handler.service
-        mode: '0644'
-      notify: Enable and start AP mode systemd unit
+      notify: Docker compose restart
 
   handlers:
-    - name: Docker compose up
+    - name: Docker compose restart
       ansible.builtin.command:
-        cmd: "cd /home/{{ hostvars[inventory_hostname].user }}/document-server/ && docker compose down && docker compose up -d"
-
-    - name: Enable and start AP mode systemd unit
-      ansible.builtin.systemd_service:
-        name: ap-mode-handler
-        state: started
-        enabled: true
-        daemon_reload: true
+        cmd: "docker compose --project-directory /home/{{ hostvars[inventory_hostname].user }}/document-server/ restart"

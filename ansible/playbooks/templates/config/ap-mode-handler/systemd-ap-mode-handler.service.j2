@@ -5,8 +5,8 @@ Requires=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/{{ hostvars[inventory_hostname].user }}/document-server/
-ExecStart=/home/{{ hostvars[inventory_hostname].user }}/document-server/ap-mode-handler.sh auto-delay
+WorkingDirectory=/home/{{ hostvars[inventory_hostname].user }}/ap-mode-handler/
+ExecStart=/home/{{ hostvars[inventory_hostname].user }}/ap-mode-handler/ap-mode-handler.sh auto-delay
 RemainAfterExit=yes
 
 [Install]
